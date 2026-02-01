@@ -1,0 +1,27 @@
+{
+  "name": "learning-react-native",
+  "version": "1.0.0",
+  "description": "WE WILL HAVE ADMIN, BACKEND, APP 3 REPOS",
+  "main": "index.js",
+
+  "engines": {
+    "node": ">=20.0.0"
+  },
+
+  "scripts": {
+    "build" : "npm install --prefix backend && npm install --prefix admin && npm run build --prefix app",
+    "start" : "npm run start --prefix backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salihedneer21/ecommerce.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/salihedneer21/ecommerce/issues"
+  },
+  "homepage": "https://github.com/salihedneer21/ecommerce#readme"
+}

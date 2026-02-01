@@ -354,4 +354,231 @@ Complex project, need config	nodemon
 Team with older Node versions	nodemon
 Your current setup with --watch is perfectly fine for learning!
 
+
+config/dotenv
+
+
+The Problem This Solves
+You don't want to hardcode sensitive data (database passwords, API keys) or environment-specific values (port numbers) in your code. Why?
+
+Security - You might accidentally commit secrets to git
+Flexibility - Different values for development vs production
+Step by Step
+1. import dotenv from 'dotenv'
+Imports the dotenv library. This library reads a .env file and loads its contents into process.env.
+
+2. dotenv.config()
+This does the magic. It:
+
+Looks for a file named .env in your project root
+Reads it line by line
+Adds each variable to process.env
+Example .env file:
+
+
+NODE_ENV=production
+PORT=5000
+DB_URL=mongodb://realserver.com:27017/myapp
+After dotenv.config() runs:
+
+
+process.env.NODE_ENV  // "production"
+process.env.PORT      // "5000" (always a string!)
+process.env.DB_URL    // "mongodb://realserver.com:27017/myapp"
+3. What is process.env?
+process is a global object in Node.js that gives info about the current running process.
+
+process.env is an object containing all environment variables:
+
+
+console.log(process.env);
+// {
+//   PATH: "/usr/local/bin:...",
+//   HOME: "/Users/salih",
+//   NODE_ENV: "production",
+//   PORT: "5000",
+//   ... system variables
+// }
+4. The || Fallback Pattern
+
+PORT: process.env.PORT || 3000
+This means: "Use process.env.PORT if it exists, otherwise use 3000"
+
+If .env has	process.env.PORT	Result
+PORT=5000	"5000"	"5000"
+Nothing	undefined	3000
+How || works:
+
+
+undefined || 3000   // → 3000 (undefined is falsy)
+"5000" || 3000      // → "5000" (non-empty string is truthy)
+"" || 3000          // → 3000 (empty string is falsy)
+5. export const ENV = { ... }
+Creates an object with all your config values and exports it so other files can use it:
+
+
+// In server.js
+import { ENV } from './src/config/env.js';
+
+app.listen(ENV.PORT, () => {
+  console.log(`Server running on ${ENV.PORT}`);
+});
+The Flow
+
+┌─────────────────┐
+│  .env file      │
+│  PORT=5000      │
+│  DB_URL=...     │
+└────────┬────────┘
+         │ dotenv.config() reads this
+         ▼
+┌─────────────────┐
+│  process.env    │
+│  (Node global)  │
+│  .PORT = "5000" │
+└────────┬────────┘
+         │ Your code reads from here
+         ▼
+┌─────────────────┐
+│  ENV object     │
+│  (your export)  │
+│  .PORT = "5000" │
+└────────┬────────┘
+         │ Other files import this
+         ▼
+┌─────────────────┐
+│  server.js      │
+│  app.listen(    │
+│    ENV.PORT     │
+│  )              │
+└─────────────────┘
+Important: Add .env to .gitignore
+Never commit your .env file! Add it to .gitignore:
+
+
+# .gitignore
+.env
+Instead, create a .env.example with dummy values for others to copy:
+
+
+# .env.example
+NODE_ENV=development
+PORT=3000
+DB_URL=mongodb://localhost:27017/myapp
+One Thing to Note
+process.env values are always strings. So:
+
+
+process.env.PORT = "5000"  // string, not number
+
+// If you need a number:
+const port = Number(process.env.PORT) || 3000;
+
+1. import path from 'path'
+path is a built-in Node.js module (no install needed). It helps work with file paths across different operating systems.
+
+Why? Because paths are different:
+
+Windows: C:\Users\salih\project
+Mac/Linux: /Users/salih/project
+path handles this for you.
+
+
+4a. express.static()
+
+app.use(express.static(path.join(__dirname, '../admin/dist')));
+What it does: Serves static files (HTML, CSS, JS, images) from a folder.
+
+When a request comes in:
+
+
+Request: GET /main.js
+→ Express looks for: /admin/dist/main.js
+→ If found, sends the file
+Request	File Served
+/style.css	/admin/dist/style.css
+/logo.png	/admin/dist/logo.png
+/assets/icon.svg	/admin/dist/assets/icon.svg
+
+4b. The Catch-All Route *
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
+});
+What is *? A wildcard that matches any route.
+
+Why do this? For Single Page Applications (SPA) like React, Vue, or Angular.
+
+Here's the problem with SPAs:
+
+
+Your React app has routes:
+- /dashboard
+- /users
+- /settings
+
+These routes exist in React, NOT on the server.
+If someone directly visits http://yoursite.com/dashboard:
+
+Browser asks server for /dashboard
+Server has no /dashboard route
+Without *, server returns 404 ❌
+With the catch-all:
+
+Browser asks server for /dashboard
+Server matches *
+Server sends index.html
+React loads and handles /dashboard route ✅
+
+
+
+
+
 # ecommerce
+
+
+--prefix in npm
+The --prefix flag tells npm to run the command in a different directory.
+
+
+npm install --prefix backend
+This is the same as:
+
+
+cd backend && npm install
+Breaking Down Your Build Script
+
+"build": "npm install --prefix backend && npm install --prefix admin && npm run build --prefix admin"
+Command	What it does
+npm install --prefix backend	Install dependencies in /backend folder
+npm install --prefix admin	Install dependencies in /admin folder
+npm run build --prefix admin	Run build script in /admin folder
+Why Use This?
+Your project structure likely looks like:
+
+
+/learning-react-native/
+├── package.json        ← Root (you're here)
+├── backend/
+│   └── package.json    ← Backend dependencies
+└── admin/
+    └── package.json    ← Frontend dependencies
+This is a monorepo setup - multiple projects in one repository.
+
+The root package.json has a single command to set up everything:
+
+
+npm run build   # Installs and builds all sub-projects
+Without --prefix, you'd have to:
+
+
+cd backend && npm install && cd ..
+cd admin && npm install && npm run build && cd ..
+Quick Reference
+
+npm install --prefix ./some-folder     # Install in that folder
+npm run dev --prefix ./some-folder     # Run script in that folder
+npm test --prefix ./some-folder        # Run tests in that folder
+Makes managing multiple packages much cleaner!
+
+
